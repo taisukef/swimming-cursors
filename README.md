@@ -1,6 +1,6 @@
 # swimming cursors
 
-A JavaScript demo app forked from [Flock of arrows. - junkiyoshi/Insta20250112](https://github.com/junkiyoshi/Insta20250112/tree/main)
+A JavaScript demo app with [ofjs](https://github.com/code4fukui/ofjs) forked from [Flock of arrows. - junkiyoshi/Insta20250112](https://github.com/junkiyoshi/Insta20250112/tree/main)
 
 ## reference 
 
