@@ -1,120 +1,134 @@
-#include "ofApp.h"
+import {
+  ofSetWindowTitle, ofBackground, ofSetLineWidth, ofSeedRandom, ofRandom, ofRunApp, ofMap,
+  ofTranslate, ofGetWindowSize, ofNoise, ofGetFrameNum, ofGetFramePerSecond,
+  ofColor, ofSetColor, ofFill, ofNoFill, ofBeginShape, ofVertex, ofEndShape,
+  cos, sin, atan2, PI,
+} from "https://code4fukui.github.io/ofjs/ofMain.js";
+import * as glm from "https://code4fukui.github.io/ofjs/glm.js";
 
-//--------------------------------------------------------------
-void ofApp::setup() {
+const fillColorLeader = ofColor(200, 0, 0);
+const strokeColorLeader = ofColor(255, 255, 255);
+const fillColor = ofColor(0, 0, 0);
+const strokeColor = ofColor(255, 255, 255);
 
-	ofSetFrameRate(25);
-	ofSetWindowTitle("openFrameworks");
+export class ofApp {
+  setup() {
+    //ofSetFrameRate(25);
+    ofSetWindowTitle("swimming cursors");
 
-	ofBackground(39);
-	ofSetLineWidth(2);
-}
+    //ofBackground(39);
+    ofBackground(0);
+    ofSetLineWidth(2);
 
-//--------------------------------------------------------------
-void ofApp::update() {
+    this.seed = Math.floor(Math.random() * 100000);
+  }
+  update() {
+    ofSeedRandom(this.seed);
+  }
+  draw() {
+    const size = ofGetWindowSize();
+    ofTranslate(size.getMul(0.5));
+    const w2 = size.x / 2;
+    const h2 = size.y / 2;
+    const wh2 = Math.min(w2, h2);
 
-	ofSeedRandom(39);
-}
+    const base_noise_seed = glm.vec3(ofRandom(1000), ofRandom(1000), ofRandom(1000));
 
-//--------------------------------------------------------------
-void ofApp::draw() {
+    const narrows = 250;
+    const speed = 80 / 360 * wh2;
+    const fps = ofGetFramePerSecond();
+    const tick = 0.01 / (fps > 100 ? 4 : 2);
+    const tick2 = tick * 0.8;
+    const minsize = 10 / 360 * wh2;
+    const maxsize = 20 / 360 * wh2;
+    for (let k = 0; k < narrows; k++) {
 
-	ofTranslate(ofGetWindowSize() * 0.5);
+      //const param = glm.vec3(2, 0, 0);
+      const noise_seed = glm.vec3(ofRandom(1000), ofRandom(1000), ofRandom(1000));
+      if (ofGetFrameNum() < 3) {
+        console.log(ofGetFrameNum(), k, noise_seed)
+      }
+      
+      const base_location = glm.vec2(
+        ofMap(ofNoise(base_noise_seed.x, (k + ofGetFrameNum()) * tick), 0, 1, -w2, w2),
+        ofMap(ofNoise(base_noise_seed.y, (k + ofGetFrameNum()) * tick), 0, 1, -h2, h2));
 
-	auto base_noise_seed = glm::vec3(ofRandom(1000), ofRandom(1000), ofRandom(1000));
+      const location = glm.vec2(
+        ofMap(ofNoise(noise_seed.x, (k + ofGetFrameNum()) * tick2), 0, 1, -speed, speed),
+        ofMap(ofNoise(noise_seed.y, (k + ofGetFrameNum()) * tick2), 0, 1, -speed, speed));
 
-	for (int k = 0; k < 80; k++) {
+      const next_base_location = glm.vec2(
+        ofMap(ofNoise(base_noise_seed.x, (k + ofGetFrameNum() + 1) * tick), 0, 1, -w2, w2),
+        ofMap(ofNoise(base_noise_seed.y, (k + ofGetFrameNum() + 1) * tick), 0, 1, -h2, h2));
 
-		auto param = glm::vec3(2, 0, 0);
-		auto noise_seed = glm::vec3(ofRandom(1000), ofRandom(1000), ofRandom(1000));
+      const next = glm.vec2(
+        ofMap(ofNoise(noise_seed.x, (k + ofGetFrameNum() + 1) * tick2), 0, 1, -speed, speed),
+        ofMap(ofNoise(noise_seed.y, (k + ofGetFrameNum() + 1) * tick2), 0, 1, -speed, speed));
 
-		auto base_location = glm::vec2(
-			ofMap(ofNoise(base_noise_seed.x, (k + ofGetFrameNum()) * 0.01), 0, 1, -360, 360),
-			ofMap(ofNoise(base_noise_seed.y, (k + ofGetFrameNum()) * 0.01), 0, 1, -360, 360));
+      location.add(base_location);
+      next.add(next_base_location);
+      if (k == narrows - 1) {
+        this.draw_arrow(location, next, ofMap(k, 0, narrows, minsize, maxsize), fillColorLeader, strokeColorLeader);
+      } else {
+        this.draw_arrow(location, next, ofMap(k, 0, narrows, minsize, maxsize), fillColor, strokeColor);
+      }
+    }
 
-		auto location = glm::vec2(
-			ofMap(ofNoise(noise_seed.x, (k + ofGetFrameNum()) * 0.008), 0, 1, -50, 50),
-			ofMap(ofNoise(noise_seed.y, (k + ofGetFrameNum()) * 0.008), 0, 1, -40, 40));
+    /*
+    int start = 250 + 383 + 40;
+    if (ofGetFrameNum() > start) {
 
-		auto next_base_location = glm::vec2(
-			ofMap(ofNoise(base_noise_seed.x, (k + ofGetFrameNum() + 1) * 0.01), 0, 1, -360, 360),
-			ofMap(ofNoise(base_noise_seed.y, (k + ofGetFrameNum() + 1) * 0.01), 0, 1, -360, 360));
+      ostringstream os;
+      os << setw(4) << setfill('0') << ofGetFrameNum() - start;
+      ofImage image;
+      image.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+      image.saveImage("image/cap/img_" + os.str() + ".jpg");
+      if (ofGetFrameNum() - start >= 25 * 20) {
 
-		auto next = glm::vec2(
-			ofMap(ofNoise(noise_seed.x, (k + ofGetFrameNum() + 1) * 0.008), 0, 1, -40, 40),
-			ofMap(ofNoise(noise_seed.y, (k + ofGetFrameNum() + 1) * 0.008), 0, 1, -40, 40));
+        std::exit(1);
+      }
+    }
+    */
+  }
 
-		location += base_location;
-		next += next_base_location;
+  //--------------------------------------------------------------
+  draw_arrow(/*glm.vec2*/ location, /*glm.vec2*/ next_location, /*float*/ size, /*ofColor*/ fill_color, /*ofColor*/ no_fill_color) {
 
-		if (k != 70) {
+    const angle = atan2(next_location.y - location.y, next_location.x - location.x);
 
-			this->draw_arrow(location, next, ofMap(k, 0, 80, 13, 20), ofColor(255, 0, 0), ofColor(0));
-		}
-		else {
+    ofSetColor(fill_color);
+    ofFill();
+    ofBeginShape();
+    ofVertex(glm.vec2(size * 0.8 * cos(angle), size * 0.8 * sin(angle)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)).add(location));
+    ofEndShape(true);
 
-			this->draw_arrow(location, next, ofMap(k, 0, 80, 13, 20), ofColor(0), ofColor(255, 0, 0));
-		}
-	}
+    ofBeginShape();
+    ofVertex(glm.vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)).mul(0.25).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)).mul(0.25).sub(glm.vec2(size * cos(angle), size * sin(angle)).mul(0.5)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)).mul(0.25).sub(glm.vec2(size * cos(angle), size * sin(angle)).mul(0.5)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)).mul(0.25).add(location));
+    ofEndShape(true);
 
-	/*
-	int start = 250 + 383 + 40;
-	if (ofGetFrameNum() > start) {
+    ofSetColor(no_fill_color);
+    ofNoFill();
+    ofBeginShape();
+    ofVertex(glm.vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)).mul(0.25).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)).add(location));
+    ofVertex(glm.vec2(size * 0.8 * cos(angle), size * 0.8 * sin(angle)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)).mul(0.25).add(location));
+    ofEndShape();
 
-		ostringstream os;
-		os << setw(4) << setfill('0') << ofGetFrameNum() - start;
-		ofImage image;
-		image.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-		image.saveImage("image/cap/img_" + os.str() + ".jpg");
-		if (ofGetFrameNum() - start >= 25 * 20) {
+    ofBeginShape();
+    ofVertex(glm.vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)).mul(0.25).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)).mul(0.25).sub(glm.vec2(size * cos(angle), size * sin(angle)).mul(0.5)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)).mul(0.25).sub(glm.vec2(size * cos(angle), size * sin(angle)).mul(0.5)).add(location));
+    ofVertex(glm.vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)).mul(0.25).add(location));
+    ofEndShape();
+  }
+};
 
-			std::exit(1);
-		}
-	}
-	*/
-}
-
-//--------------------------------------------------------------
-void ofApp::draw_arrow(glm::vec2 location, glm::vec2 next_location, float size, ofColor fill_color, ofColor no_fill_color) {
-
-	auto angle = std::atan2(next_location.y - location.y, next_location.x - location.x);
-
-	ofSetColor(fill_color);
-	ofFill();
-	ofBeginShape();
-	ofVertex(glm::vec2(size * 0.8 * cos(angle), size * 0.8 * sin(angle)) + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)) + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)) + location);
-	ofEndShape(true);
-
-	ofBeginShape();
-	ofVertex(glm::vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)) * 0.25 + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)) * 0.25 - glm::vec2(size * cos(angle), size * sin(angle)) * 0.5 + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)) * 0.25 - glm::vec2(size * cos(angle), size * sin(angle)) * 0.5 + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)) * 0.25 + location);
-	ofEndShape(true);
-
-	ofSetColor(no_fill_color);
-	ofNoFill();
-	ofBeginShape();
-	ofVertex(glm::vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)) * 0.25 + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)) + location);
-	ofVertex(glm::vec2(size * 0.8 * cos(angle), size * 0.8 * sin(angle)) + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)) + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)) * 0.25 + location);
-	ofEndShape();
-
-	ofBeginShape();
-	ofVertex(glm::vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)) * 0.25 + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle + PI * 0.5), size * 0.5 * sin(angle + PI * 0.5)) * 0.25 - glm::vec2(size * cos(angle), size * sin(angle)) * 0.5 + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)) * 0.25 - glm::vec2(size * cos(angle), size * sin(angle)) * 0.5 + location);
-	ofVertex(glm::vec2(size * 0.5 * cos(angle - PI * 0.5), size * 0.5 * sin(angle - PI * 0.5)) * 0.25 + location);
-	ofEndShape();
-}
-
-//--------------------------------------------------------------
-int main() {
-
-	ofSetupOpenGL(720, 720, OF_WINDOW);
-	ofRunApp(new ofApp());
-}
+//ofSetupOpenGL(720, 720, OF_WINDOW);
+ofRunApp(new ofApp());
